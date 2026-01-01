@@ -4,7 +4,6 @@ def init_db():
     conn = sqlite3.connect('lol_balance.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS rooms (room_id TEXT PRIMARY KEY)''')
-    # score 타입을 REAL에서 INTEGER로 변경
     c.execute('''CREATE TABLE IF NOT EXISTS players 
                  (room_id TEXT, name TEXT, score INTEGER, position TEXT)''')
     conn.commit()
@@ -24,6 +23,15 @@ def check_room_exists(room_id):
     conn = sqlite3.connect('lol_balance.db')
     c = conn.cursor()
     c.execute("SELECT * FROM rooms WHERE room_id=?", (room_id,))
+    res = c.fetchone()
+    conn.close()
+    return res is not None
+
+# 중복 유저 확인 함수
+def is_player_in_room(room_id, name):
+    conn = sqlite3.connect('lol_balance.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM players WHERE room_id=? AND name=?", (room_id, name))
     res = c.fetchone()
     conn.close()
     return res is not None
