@@ -29,24 +29,28 @@ if st.session_state.page == 'home':
 elif st.session_state.page == 'host':
     if 'my_room' not in st.session_state:
         st.subheader("방장 정보를 입력하세요")
-        h_id = st.text_input("닉네임#TAG")
+        h_id = st.text_input("닉네임#TAG (필수)", placeholder="예: 가나다#KR1")
         
-        if h_id:
+        if h_id and "#" in h_id:
             url_id = h_id.replace('#', '-')
             deeplol_url = f"https://www.deeplol.gg/summoner/KR/{url_id}"
             st.link_button("🔍 내 딥롤 전적창 열기", deeplol_url)
-            
-        # [수정] 범위를 0~100으로 변경
-        h_score = st.number_input("내 AI-Score (0~100)", 0, 100, 50, step=1)
+        
+        # 기본값을 0으로 설정하여 사용자가 직접 입력하도록 유도
+        h_score = st.number_input("내 AI-Score (1~100 입력 필수)", 0, 100, 0, step=1)
         
         if st.button("방 생성", use_container_width=True, type="primary"):
-            if "#" in h_id:
+            # 입력 검증
+            if not h_id or "#" not in h_id:
+                st.error("⚠️ 올바른 닉네임#TAG를 입력해 주세요.")
+            elif h_score <= 0:
+                st.error("⚠️ AI 점수를 입력해 주세요. (0점은 입력할 수 없습니다.)")
+            else:
                 r_id = str(random.randint(1000, 9999))
                 if db_handler.create_room(r_id):
                     db_handler.add_player(r_id, h_id, h_score, "None")
                     st.session_state['my_room'] = r_id
                     st.rerun()
-            else: st.error("태그(#)를 포함해 주세요!")
     else:
         rid = st.session_state['my_room']
         st.success(f"방 번호: {rid}")
@@ -73,19 +77,25 @@ elif st.session_state.page == 'host':
             if st.button("🔄 명단 새로고침"): st.rerun()
 
 elif st.session_state.page == 'guest':
+    st.header("🎮 게스트 입장")
     r_code = st.text_input("방 번호 4자리")
     if r_code and db_handler.check_room_exists(r_code):
-        g_id = st.text_input("내 닉네임#TAG")
-        if g_id:
+        st.success("✅ 방을 찾았습니다.")
+        g_id = st.text_input("내 닉네임#TAG (필수)", placeholder="예: 가나다#KR1")
+        
+        if g_id and "#" in g_id:
             url_id = g_id.replace('#', '-')
             deeplol_url = f"https://www.deeplol.gg/summoner/KR/{url_id}"
             st.link_button("🔍 내 전적창 열기", deeplol_url)
             
-        # [수정] 범위를 0~100으로 변경
-        g_score = st.number_input("딥롤 AI-Score (0~100)", 0, 100, 50, step=1)
+        g_score = st.number_input("확인한 AI-Score 입력 (필수)", 0, 100, 0, step=1)
         
         if st.button("참가 완료", use_container_width=True, type="primary"):
-            if "#" in g_id:
+            # 입력 검증
+            if not g_id or "#" not in g_id:
+                st.error("⚠️ 올바른 닉네임#TAG를 입력해 주세요.")
+            elif g_score <= 0:
+                st.error("⚠️ 본인의 AI 점수를 정확히 입력해 주세요.")
+            else:
                 db_handler.add_player(r_code, g_id, g_score, "None")
-                st.success("등록되었습니다!")
-            else: st.error("태그(#)를 포함해 주세요!")
+                st.success("🎉 등록되었습니다! 방장 화면을 확인해 주세요.")
